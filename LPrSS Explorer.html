@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LPrSS Explorer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            width: 60%;
+            margin: auto;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        textarea, input {
+            padding: 10px;
+            margin: 10px 5px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .row label {
+            flex: 0 0 auto;
+            margin-right: 10px;
+            font-size: 16px;
+        }
+        .row input, .row textarea {
+            flex: 1 1 auto;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f1f1f1;
+            border-radius: 5px;
+            line-height: 1.6;
+        }
+        .error {
+            color: red;
+        }
+        .highlight-red {
+            color: red;
+            font-weight: bold;
+        }
+        .highlight-yellow {
+            background-color: yellow;
+        }
+        .highlight-green {
+            background-color: lightgreen;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>LPrSS Explorer</h1>
+        
+        <div class="row">
+            <label for="sequenceInput">Expression:</label>
+            <textarea id="sequenceInput" oninput="updateExpansion()" placeholder="e.g. 1,2,2,4">1,2,2,4</textarea>
+        </div>
+        
+        <div class="row">
+            <input type="number" id="nthBadRoot" oninput="updateExpansion()" placeholder="a">
+            <label>th</label>
+            <input type="number" id="valueBadRoot" oninput="updateExpansion()" placeholder="b">
+        </div>
+        
+        <div class="row">
+            <label for="expandCount">Terms:</label>
+            <input type="number" id="expandCount" oninput="updateExpansion()" placeholder="e.g. 5" value="5">
+        </div>
+
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function updateExpansion() {
+            const input = document.getElementById('sequenceInput').value.trim();
+            const nthBadRoot = parseInt(document.getElementById('nthBadRoot').value.trim());
+            const valueBadRoot = parseInt(document.getElementById('valueBadRoot').value.trim());
+            const expandCount = parseInt(document.getElementById('expandCount').value.trim());
+            const resultElement = document.getElementById('result');
+
+            if (!input || isNaN(expandCount) || expandCount < 1) {
+                resultElement.innerHTML = "<span class='error'>Wrong Expression</span>";
+                return;
+            }
+
+            try {
+                let sequence = input.split(/[,，]/).map(Number);
+
+                if (sequence.some(isNaN)) {
+                    throw new Error("The sequence must be comma-separated numbers");
+                }
+
+                const lastElement = sequence[sequence.length - 1];
+                let badRootIndex = -1;
+
+                if (!isNaN(nthBadRoot) && !isNaN(valueBadRoot)) {
+                    let count = 0;
+
+                    for (let i = 0; i < sequence.length - 1; i++) {
+                        if (sequence[i] === valueBadRoot) {
+                            count++;
+                            if (count === nthBadRoot) {
+                                badRootIndex = i;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (badRootIndex === -1) {
+                    for (let i = sequence.length - 2; i >= 0; i--) {
+                        if (sequence[i] < lastElement) {
+                            badRootIndex = i;
+                            break;
+                        }
+                    }
+                }
+
+                if (badRootIndex === -1) {
+                    resultElement.innerHTML = `<strong>Expression:</strong> ${sequence.join(',')}`;
+                    return;
+                }
+
+                const badRoot = sequence[badRootIndex];
+                const goodPart = sequence.slice(0, badRootIndex);
+                const badPart = sequence.slice(badRootIndex, sequence.length - 1); 
+                const rankDifference = lastElement - badRoot - 1; 
+
+                let expandedSequence = [...goodPart];
+                expandedSequence.push({ value: badRoot, color: 'highlight-red' });
+                expandedSequence.push(...badPart.slice(1));
+
+                let colors = ['highlight-yellow', 'highlight-green'];
+                let colorIndex = 0;
+
+                for (let i = 1; i <= expandCount; i++) {
+                    const newBadPart = badPart.map(x => x + i * rankDifference);
+                    expandedSequence.push(...newBadPart.map((x) => ({
+                        value: x,
+                        color: colors[colorIndex % colors.length]
+                    })));
+                    colorIndex++;
+                }
+
+                const expandedSequenceHTML = expandedSequence.map((item) => {
+                    if (typeof item === 'object') {
+                        return `<span class="${item.color}">${item.value}</span>`;
+                    }
+                    return item;
+                }).join(', ');
+
+                resultElement.innerHTML = `<strong>Result:</strong><br>${expandedSequenceHTML}`;
+            } catch (error) {
+                resultElement.innerHTML = `<span class='error'>Something went wrong ${error.message}</span>`;
+            }
+        }
+
+        window.onload = updateExpansion;
+    </script>
+</body>
+</html>

@@ -12,7 +12,8 @@
             background-color: #f9f9f9;
         }
         .container {
-            width: 60%;
+            width: 90%;
+            max-width: 600px;
             margin: auto;
             padding: 20px;
             background: white;
@@ -20,25 +21,21 @@
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
         }
         textarea, input {
+            width: 100%;
             padding: 10px;
-            margin: 10px 5px;
+            margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
             box-sizing: border-box;
         }
         .row {
-            display: flex;
-            align-items: center;
             margin-bottom: 10px;
         }
         .row label {
-            flex: 0 0 auto;
-            margin-right: 10px;
+            display: block;
+            margin-bottom: 5px;
             font-size: 16px;
-        }
-        .row input, .row textarea {
-            flex: 1 1 auto;
         }
         .result {
             margin-top: 20px;
@@ -72,11 +69,15 @@
         </div>
         
         <div class="row">
-            <input type="number" id="nthBadRoot" oninput="updateExpansion()" placeholder="a">
-            <label>th</label>
-            <input type="number" id="valueBadRoot" oninput="updateExpansion()" placeholder="b">
+            <label for="nthBadRoot">nth BadRoot:</label>
+            <input type="number" id="nthBadRoot" oninput="updateExpansion()" placeholder="e.g. 1">
         </div>
-        
+
+        <div class="row">
+            <label for="valueBadRoot">BadRoot Value:</label>
+            <input type="number" id="valueBadRoot" oninput="updateExpansion()" placeholder="e.g. 2">
+        </div>
+
         <div class="row">
             <label for="expandCount">Terms:</label>
             <input type="number" id="expandCount" oninput="updateExpansion()" placeholder="e.g. 5" value="5">

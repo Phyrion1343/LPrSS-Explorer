@@ -40,7 +40,6 @@
     <script>
         function findSESSBadRoot(sequence) {
             let rootCandidates = Array(sequence.length).fill(null);
-
             let groups = [];
             let temp = [0];
             let diff = null;
@@ -61,13 +60,11 @@
             for (let group of groups) {
                 rootCandidates[group[0]] = sequence[group[0]];
             }
-
             let lastIndex = sequence.length - 1;
             let lastGroup = groups[groups.length - 1];
             let lastElement = sequence[lastIndex];
             let lastGroupStart = sequence[lastGroup[0]];
             let shouldAddLastElement = false;
-
             let parentIndex = -1;
             for (let i = 0; i < rootCandidates.length; i++) {
                 if (rootCandidates[i] !== null && rootCandidates[i] < lastGroupStart) {
@@ -98,7 +95,6 @@
         }
 
         function getBadRoot(sequence, extractedRoots) {
-
             const lastElement = extractedRoots[extractedRoots.length - 1];
             let candidateBadRoot = null;
 
@@ -136,6 +132,16 @@
                 return;
             }
 
+            const firstElement = sequence[0];
+            const lastElement = sequence[sequence.length - 1];
+            if (lastElement <= firstElement) {
+                const resultElement = document.getElementById('result');
+                resultElement.innerHTML = `
+                    <strong>Result:</strong><br>${sequence.join(", ")}
+                `;
+                return;
+            }
+
             let currentSequence = sequence;
             let extractedRoots = null;
 
@@ -151,12 +157,7 @@
 
             const goodPart = sequence.slice(0, badRootIndex);
             const badPart = sequence.slice(badRootIndex, sequence.length - 1);
-            const lastElement = sequence[sequence.length - 1];
             const delta = lastElement - badRoot;
-
-            if (delta <= 0) {
-                return;
-            }
 
             let expandedHTML = [];
             expandedHTML.push(...goodPart.map(x => `<span>${x}</span>`));

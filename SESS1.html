@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SESS-Extraction</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f9f9f9; }
+        .container { width: 90%; max-width: 600px; margin: auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); }
+        textarea, input, select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        .row { margin-bottom: 10px; }
+        .result { margin-top: 20px; padding: 15px; background: #f1f1f1; border-radius: 5px; line-height: 1.6; }
+        .error { color: red; }
+        .highlight-red { color: red; font-weight: bold; }
+        .sequence-table { border-collapse: collapse; width: 100%; margin-top: 20px; text-align: center; }
+        .sequence-table td { padding: 8px; border: 1px solid #ddd; }
+        .sequence-table .root { font-weight: bold; color: blue; }
+        .sequence-table .original { color: black; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SESS-Extraction</h1>
+        <div class="row">
+            <label for="sequenceInput">Expression:</label>
+            <textarea id="sequenceInput" oninput="updateExtraction()" placeholder="e.g. 1,2,3,2,2,3,4,3,2,3">1,2,3,2,2,3,4</textarea>
+        </div>
+        <div class="row">
+            <label for="extractTimes">Number of Extractions:</label>
+            <input id="extractTimes" type="number" value="2" min="1" oninput="updateExtraction()" />
+        </div>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        function findSESSBadRoot(sequence) {
+            let rootCandidates = Array(sequence.length).fill(null);
+
+            let groups = [];
+            let temp = [0]; 
+            let diff = null;
+
+            for (let i = 1; i < sequence.length; i++) {
+                let currentDiff = sequence[i] - sequence[i - 1];
+                if (currentDiff > 0 && (diff === null || currentDiff === diff)) {
+                    temp.push(i);
+                    diff = currentDiff;
+                } else {
+                    groups.push([...temp]);
+                    temp = [i];
+                    diff = null;
+                }
+            }
+            groups.push([...temp]);
+
+            for (let group of groups) {
+                rootCandidates[group[0]] = sequence[group[0]]; 
+            }
+
+            let lastIndex = sequence.length - 1;
+            let lastGroup = groups[groups.length - 1];
+            let lastElement = sequence[lastIndex];
+            let lastGroupStart = sequence[lastGroup[0]];
+            let shouldAddLastElement = false;
+
+            let parentIndex = -1;
+            for (let i = 0; i < rootCandidates.length; i++) {
+                if (rootCandidates[i] !== null && rootCandidates[i] < lastGroupStart) {
+                    parentIndex = i;
+                }
+            }
+
+            if (parentIndex !== -1) {
+                for (let i = 0; i < groups.length - 1; i++) {
+                    let currentGroup = groups[i];
+                    if (
+                        currentGroup.includes(parentIndex) ||
+                        (currentGroup[0] > parentIndex && currentGroup[0] < lastGroup[0])
+                    ) {
+                        if (lastGroupStart >= sequence[currentGroup[currentGroup.length - 1]]) {
+                            shouldAddLastElement = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (shouldAddLastElement && rootCandidates[lastIndex] === null) {
+                rootCandidates[lastIndex] = lastElement;
+            }
+            return rootCandidates;
+        }
+
+        function alignFromRight(sequence, extracted) {
+            let aligned = Array(sequence.length).fill(null);
+
+            let extractedIndex = extracted.length - 1;
+            for (let i = sequence.length - 1; i >= 0; i--) {
+                if (extractedIndex < 0) break;
+                if (sequence[i] === extracted[extractedIndex]) {
+                    aligned[i] = extracted[extractedIndex];
+                    extractedIndex--;
+                }
+            }
+
+            return aligned;
+        }
+
+        function updateExtraction() {
+            const input = document.getElementById('sequenceInput').value.trim();
+            const extractTimes = parseInt(document.getElementById('extractTimes').value, 10);
+            const resultElement = document.getElementById('result');
+
+            if (!input || isNaN(extractTimes) || extractTimes < 1) {
+                resultElement.innerHTML = "<span class='error'>Please enter a valid expression</span>";
+                return;
+            }
+
+            try {
+                let sequence = input.split(/[,，]/).map(Number);
+                if (sequence.some(isNaN)) throw new Error("The sequence must be comma-separated numbers");
+                if (extractTimes < 1) throw new Error("Please enter a positive integer");
+
+                let extractions = [];
+                let currentSequence = sequence;
+
+                for (let i = 0; i < extractTimes; i++) {
+                    let extractedRoots = findSESSBadRoot(currentSequence).filter(root => root !== null);
+
+                    const alignedRoots = alignFromRight(sequence, extractedRoots);
+                    extractions.unshift(alignedRoots);
+
+                    currentSequence = extractedRoots;
+                }
+
+                let tableHTML = '<table class="sequence-table">';
+                extractions.forEach(roots => {
+                    tableHTML += '<tr>';
+                    roots.forEach(root => {
+                        tableHTML += `<td class="root">${root !== null ? root : ''}</td>`;
+                    });
+                    tableHTML += '</tr>';
+                });
+
+                tableHTML += '<tr>';
+                sequence.forEach(num => {
+                    tableHTML += `<td class="original">${num}</td>`;
+                });
+                tableHTML += '</tr>';
+                tableHTML += '</table>';
+
+                resultElement.innerHTML = `
+                    <strong>Results:</strong><br>${tableHTML}
+                `;
+            } catch (error) {
+                resultElement.innerHTML = `<span class='error'>WRONG: ${error.message}</span>`;
+            }
+        }
+
+        window.onload = updateExtraction;
+    </script>
+</body>
+</html>

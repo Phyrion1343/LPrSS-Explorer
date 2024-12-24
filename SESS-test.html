@@ -150,7 +150,7 @@
             if (sequence.some(isNaN)) return;
 
             let currentSequence = sequence;
-            let debugOutput = `<strong>Original Sequence:</strong> ${sequence.join(", ")}<br>`;
+            let debugOutput = `<strong>Expression:</strong> ${sequence.join(", ")}<br>`;
             let extractedRoots = null;
             let stopBadRoot = null;
 
@@ -190,7 +190,7 @@
                 increment += delta - 1;
             }
 
-            debugOutput += `<strong>Expanded Sequence:</strong> ${expandedHTML.join(", ")}<br>`;
+            debugOutput += `<strong>Result:</strong> ${expandedHTML.join(", ")}<br>`;
             document.getElementById('result').innerHTML = debugOutput;
         }
 

@@ -98,7 +98,7 @@
                 rootCandidates[lastIndex] = lastElement;
             }
 
-            return { rootCandidates, groups };
+            return { rootCandidates, groups, shouldAddLastElement };
         }
 
         function checkStopCondition(groups, sequence) {
@@ -161,12 +161,26 @@
             let stopBadRoot = null;
 
             for (let i = 0; i < extractTimes; i++) {
-                const { rootCandidates, groups } = findSESSBadRoot(currentSequence);
+                const { rootCandidates, groups, shouldAddLastElement } = findSESSBadRoot(currentSequence);
                 extractedRoots = rootCandidates.filter(root => root !== null);
 
-                const stopCondition = checkStopCondition(groups, currentSequence);
+                let stopCondition = checkStopCondition(groups, currentSequence);
+
+                if (stopCondition.stop === false) {
+                    const extendedSequence = [...currentSequence, sequence[sequence.length - 1]];
+                    const extendedGroups = findSESSBadRoot(extendedSequence).groups;
+                    const extendedCondition = checkStopCondition(extendedGroups, extendedSequence);
+
+                    if (extendedCondition.stop) {
+                        currentSequence = extendedSequence;
+                        stopBadRoot = extendedCondition.badRoot;
+                        debugOutput += `<strong>Special Rule:</strong> ${currentSequence.join(", ")}<br>`;
+                        break;
+                    }
+                }
+
                 if (stopCondition.stop) {
-                    stopBadRoot = stopCondition.badRoot; 
+                    stopBadRoot = stopCondition.badRoot;
                     break;
                 }
 
